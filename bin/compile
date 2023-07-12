@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 # bin/compile <build-dir> <cache-dir>
 
-echo "-----> Installing Ghostscript 9.54.0 using build directory $1"
+echo "-----> Installing Ghostscript using build directory $1"
 
 BUILD_DIR=$1
-PACKAGE="https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs9540/ghostpcl-9.54.0-linux-x86_64.tgz"
-BINARY="ghostpcl-9.54.0-linux-x86_64/gpcl6-9540-linux-x86_64"
 LOCATION="$BUILD_DIR/vendor/gs"
+
+if [[ -f "$ENV_DIR/GHOSTSCRIPT_DOWNLOAD_URL" ]]; then
+  PACKAGE=$(cat "$ENV_DIR/GHOSTSCRIPT_DOWNLOAD_URL")
+else
+  PACKAGE="https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10012/gs_10.01.2_amd64_snap.tgz"
+fi
+
+if [[ -f "$ENV_DIR/GHOSTSCRIPT_BINARY" ]]; then
+  BINARY=$(cat "$ENV_DIR/GHOSTSCRIPT_BINARY")
+else
+  BINARY=$(basename PACKAGE)
+  BINARY=${BINARY%.*}
+  BINARY="$BINARY/${BINARY/_snap/.snap}"
+fi
 
 # execute
 cd $BUILD_DIR

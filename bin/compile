@@ -4,6 +4,7 @@
 
 BUILD_DIR=$1
 CACHE_DIR=$2
+ENV_DIR=$3
 LOCATION="$BUILD_DIR/vendor/gs"
 
 if [[ -f "$ENV_DIR/GHOSTSCRIPT_DOWNLOAD_URL" ]]; then
@@ -11,8 +12,8 @@ if [[ -f "$ENV_DIR/GHOSTSCRIPT_DOWNLOAD_URL" ]]; then
 else
   PACKAGE="https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10012/gs_10.01.2_amd64_snap.tgz"
 fi
-VERSION=echo $PACKAGE | grep -Eo '[0-9]+(\.[0-9]+)+'
-PACKAGE_FILENAME=$(basename PACKAGE)
+VERSION=$(echo $PACKAGE | grep -Eo '[0-9]+(\.[0-9]+)+')
+PACKAGE_FILENAME=$(basename $PACKAGE)
 echo "-----> Installing Ghostscript $VERSION using build directory $1"
 
 if [[ -f "$ENV_DIR/GHOSTSCRIPT_BINARY" ]]; then
@@ -25,16 +26,21 @@ fi
 # execute
 cd $BUILD_DIR
 mkdir -p $LOCATION/bin
-if [[ ! -f "$CACHE_DIR/$PACKAGE_FILENAME" ]] then
-  echo "-------> Downloading $PACKAGE"
-  wget -O "$CACHE_DIR/$PACKAGE_FILENAME" $PACKAGE
+if [[ ! -f "$CACHE_DIR/$PACKAGE_FILENAME" ]]; then
+  echo "       Downloading $PACKAGE"
+  wget -q -O "$CACHE_DIR/$PACKAGE_FILENAME" $PACKAGE
 else
-  echo "-------> Using cached $PACKAGE_FILENAME"
+  echo "       Using cached $PACKAGE_FILENAME"
 fi
-tar xvf "$CACHE_DIR/$PACKAGE_FILENAME"
+tar -xf "$CACHE_DIR/$PACKAGE_FILENAME"
+if [[ ! -f $BINARY ]]; then
+  echo "       ERROR: $BINARY not found. Check the package content and set the correct binary path into GHOSTSCRIPT_BINARY env variable."
+  exit 1
+fi
 mv $BINARY $LOCATION/bin/gs
 
-echo "-------> Building runtime environment for Ghostscript to $LOCATION"
+echo "       Building runtime environment for Ghostscript to $LOCATION"
 
 mkdir -p $BUILD_DIR/.profile.d
+rm -rf $NAME_WO_EXT
 echo "export PATH=\"\$HOME/vendor/gs/bin:\$PATH\"" > $BUILD_DIR/.profile.d/ghostscript.sh

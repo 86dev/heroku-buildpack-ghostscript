@@ -1,0 +1,6 @@
+echo "testing"
+mkdir -p dist
+mkdir -p dist/env
+mkdir -p dist/cache
+mkdir -p dist/app
+./bin/compile "${PWD}/dist/app" "${PWD}/dist/cache" "${PWD}/dist/env"

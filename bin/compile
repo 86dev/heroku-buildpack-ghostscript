@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# bin/compile <build-dir> <cache-dir>
+# bin/compile <build-dir> <cache-dir> <env-dir>
 
-echo "-----> Installing Ghostscript using build directory $1"
 
 BUILD_DIR=$1
+CACHE_DIR=$2
 LOCATION="$BUILD_DIR/vendor/gs"
 
 if [[ -f "$ENV_DIR/GHOSTSCRIPT_DOWNLOAD_URL" ]]; then
@@ -11,23 +11,30 @@ if [[ -f "$ENV_DIR/GHOSTSCRIPT_DOWNLOAD_URL" ]]; then
 else
   PACKAGE="https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10012/gs_10.01.2_amd64_snap.tgz"
 fi
+VERSION=echo $PACKAGE | grep -Eo '[0-9]+(\.[0-9]+)+'
+PACKAGE_FILENAME=$(basename PACKAGE)
+echo "-----> Installing Ghostscript $VERSION using build directory $1"
 
 if [[ -f "$ENV_DIR/GHOSTSCRIPT_BINARY" ]]; then
   BINARY=$(cat "$ENV_DIR/GHOSTSCRIPT_BINARY")
 else
-  BINARY=$(basename PACKAGE)
-  BINARY=${BINARY%.*}
-  BINARY="$BINARY/${BINARY/_snap/.snap}"
+  NAME_WO_EXT=${PACKAGE_FILENAME%.*}
+  BINARY="$NAME_WO_EXT/${NAME_WO_EXT/_snap/.snap}"
 fi
 
 # execute
 cd $BUILD_DIR
 mkdir -p $LOCATION/bin
-wget -O gs.tgz $PACKAGE
-tar xvf gs.tgz
+if [[ ! -f "$CACHE_DIR/$PACKAGE_FILENAME" ]] then
+  echo "-------> Downloading $PACKAGE"
+  wget -O "$CACHE_DIR/$PACKAGE_FILENAME" $PACKAGE
+else
+  echo "-------> Using cached $PACKAGE_FILENAME"
+fi
+tar xvf "$CACHE_DIR/$PACKAGE_FILENAME"
 mv $BINARY $LOCATION/bin/gs
 
-echo "-----> Building runtime environment for Ghostscript to $LOCATION"
+echo "-------> Building runtime environment for Ghostscript to $LOCATION"
 
 mkdir -p $BUILD_DIR/.profile.d
 echo "export PATH=\"\$HOME/vendor/gs/bin:\$PATH\"" > $BUILD_DIR/.profile.d/ghostscript.sh
